@@ -35,17 +35,20 @@ struct client_descriptor {
 
 int OpenListenSd(const char* port) {
    if (!port) return -1;
-   int listensd, optval = 1;
+   int listensd, optval = 1, rv;
    addrinfo hints, *listp, *p;
    hints.ai_family = AF_UNSPEC;
    hints.ai_socktype = SOCK_STREAM;
    hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG | AI_NUMERICSERV;
-   getaddrinfo(NULL, port, &hints, &listp);
+   if ((rv = getaddrinfo(NULL, port, &hints, &listp)) != 0) {
+      std::cerr << "getaddrinfo error: " << gai_strerror(rv) << std::endl;
+      exit(1);
+   }
 
    for (p = listp; p != nullptr; p = p->ai_next) {
       if ((listensd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) continue;
       /* Eliminates "Address already in use" error from bind */
-      setsockopt(listensd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
+      setsockopt(listensd, SOL_SOCKET, SO_REUSEADDR, &optval , sizeof(int));
       if (bind(listensd, p->ai_addr, p->ai_addrlen) == 0) break; // success
       close(listensd);
    }
@@ -99,7 +102,7 @@ int AddToPoll(pollfd* psds, int newsd, int& sd_count, int sd_size)
     }
 
     psds[sd_count].fd = newsd;
-    psds[sd_count].events = POLLIN | POLLOUT; // Check ready-to-read
+    psds[sd_count].events = POLLIN | POLLOUT; // Check ready-to-read and ready-to-write
     //psds[sd_count].revents = 0x000;
 
     sd_count++;
@@ -116,22 +119,12 @@ void DelFromPollsds(pollfd* psds, int i, int& sd_count)
 /// and the coordinator distributes the work of the CSV file list.
 /// Example:
 ///    ./coordinator http://example.org/filelist.csv 4242
+
 int main(int argc, char* argv[]) {
    if (argc != 3) {
       std::cerr << "Usage: " << argv[0] << " <URL to csv list> <listen port>" << std::endl;
       return 1;
    }
-
-   // std::atomic<unsigned> sum = 0;
-   // auto threadNo = std::thread::hardware_concurrency();
-   // std::vector<std::thread> threads;
-   // for (unsigned i=0; i < threadNo; i++) {
-   //    threads.emplace_back([&sum, i]() {
-   //        sum += i+1;
-   //    });
-   // }
-   // for (auto& t:threads) t.join();
-   // std::cout << "ThreadNo: " << threadNo << "\tResult: " << sum << std::endl;
 
    // TODO:
    //    1. Allow workers to connect
@@ -187,7 +180,6 @@ int main(int argc, char* argv[]) {
                AddToPoll(psds, connsd, psdlen, LISTENQ+1);
                clients[connsd] = {};
                break;
-               // send it a task
                // std::cout << "With socket desc: " << connsd << std::endl;
                // if (SendTask(connsd, unassignedFiles, clients) == -1) {
                //    DelFromPollsds(psds, psdlen-1, psdlen);
@@ -228,7 +220,7 @@ int main(int argc, char* argv[]) {
         }
       }
    }
-   // join threads
+
    for (int i=0; i<psdlen; i++) close(psds[i].fd);
 
    std::cout << total << std::endl;
