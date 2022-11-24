@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cstring>
 #include <thread>
 #include <vector>
 #include <atomic>
@@ -37,6 +38,7 @@ int OpenListenSd(const char* port) {
    if (!port) return -1;
    int listensd, optval = 1, rv;
    addrinfo hints, *listp, *p;
+   memset(&hints, 0, sizeof(hints));
    hints.ai_family = AF_UNSPEC;
    hints.ai_socktype = SOCK_STREAM;
    hints.ai_flags = AI_PASSIVE; //   | AI_ADDRCONFIG | AI_NUMERICSERV;
