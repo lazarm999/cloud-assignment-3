@@ -39,7 +39,7 @@ int OpenListenSd(const char* port) {
    addrinfo hints, *listp, *p;
    hints.ai_family = AF_UNSPEC;
    hints.ai_socktype = SOCK_STREAM;
-   hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG | AI_NUMERICSERV;
+   hints.ai_flags = AI_PASSIVE; //   | AI_ADDRCONFIG | AI_NUMERICSERV;
    if ((rv = getaddrinfo(NULL, port, &hints, &listp)) != 0) {
       std::cerr << "getaddrinfo error: " << gai_strerror(rv) << std::endl;
       exit(1);
