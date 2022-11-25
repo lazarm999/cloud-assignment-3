@@ -2,3 +2,7 @@
 cmake-build-*/
 ..vscode
 build/
+
+runTestModified.sh
+testWorkloadModified.sh
+timing.sh

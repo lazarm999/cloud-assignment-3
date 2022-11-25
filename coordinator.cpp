@@ -79,6 +79,7 @@ long SendTask(int connsd, std::vector<std::string>& unassignedFiles, std::unorde
    }
 
    unassignedFiles.pop_back();
+   clients[connsd].last_seen = std::chrono::steady_clock::now();
    return sentlen;
 }
 
@@ -86,13 +87,12 @@ int RecvResult(int connsd, std::vector<std::string>& unassignedFiles, std::unord
    int result;
    if (recv(connsd, &result, sizeof(result), 0) < 0) {
       auto fileUrl = clients[connsd].file;
-      //std::cout << "Here2" << std::endl;
       clients.erase(connsd);
       unassignedFiles.push_back(fileUrl);
       close(connsd);
       return -1;
    }
-   clients[connsd] = {};
+   clients[connsd] = {}; // resets the info structure
 
    return result;
 }
@@ -103,13 +103,14 @@ int AddToPoll(pollfd* psds, int newsd, int& sd_count, int sd_size)
         return 0;
     }
 
+    memset(&psds[sd_count], 0, sizeof(pollfd));
     psds[sd_count].fd = newsd;
     psds[sd_count].events = POLLIN | POLLOUT; // Check ready-to-read and ready-to-write
-    //psds[sd_count].revents = 0x000;
 
     sd_count++;
     return 1;
 }
+
 // Remove an index from the set
 void DelFromPollsds(pollfd* psds, int i, int& sd_count)
 {
@@ -117,6 +118,7 @@ void DelFromPollsds(pollfd* psds, int i, int& sd_count)
     psds[i] = psds[sd_count-1];
     sd_count--;
 }
+
 /// Leader process that coordinates workers. Workers connect on the specified port
 /// and the coordinator distributes the work of the CSV file list.
 /// Example:
@@ -166,12 +168,12 @@ int main(int argc, char* argv[]) {
    std::unordered_map<int, client_descriptor> clients;
 
    while (remainingFileNo > 0) {
-      int poll_count = poll(psds, psdlen, 2000); 
+      int poll_count = poll(psds, psdlen, 500); 
       if (poll_count == -1) {
          perror("poll");
          exit(1);
       }
-      for (int i=0; i<psdlen; i++) {
+      for (int i = 0; i < psdlen; i++) { // for each polled socket
          if (psds[i].fd == listensd) {
             if ((psds[i].revents & POLLIN) && psdlen <= LISTENQ+1) {
                sockaddr_storage clientaddr;
@@ -181,13 +183,6 @@ int main(int argc, char* argv[]) {
                // add socket descriptor to polling list
                AddToPoll(psds, connsd, psdlen, LISTENQ+1);
                clients[connsd] = {};
-               break;
-               // std::cout << "With socket desc: " << connsd << std::endl;
-               // if (SendTask(connsd, unassignedFiles, clients) == -1) {
-               //    DelFromPollsds(psds, psdlen-1, psdlen);
-               //    continue;
-               // }
-               // else break;
             }
         }
         else {
@@ -214,7 +209,6 @@ int main(int argc, char* argv[]) {
             }
             else if ((psds[i].revents & POLLOUT) && clients[connsd].file.empty() && !unassignedFiles.empty()) {
                //std::cout << "File: " << remainingFileNo << ", unassigned len: " << unassignedFiles.size() << std::endl;
-               //std::cout << "Here0" << (psds[i].revents) << std::endl;
                if (SendTask(connsd, unassignedFiles, clients) == -1) {
                   DelFromPollsds(psds, i, psdlen);
                }
@@ -226,6 +220,8 @@ int main(int argc, char* argv[]) {
    for (int i=0; i<psdlen; i++) close(psds[i].fd);
 
    std::cout << total << std::endl;
+   
+   close(listensd);
    delete[] psds;
    return 0;
 }

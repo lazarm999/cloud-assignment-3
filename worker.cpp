@@ -11,6 +11,7 @@
 #include <string>
 #include <unistd.h>
 #include <chrono>
+#include <thread>
 
 const unsigned BUF_SIZE = 512;
 
@@ -66,10 +67,12 @@ int DoTask(CurlEasyPtr& curl, std::string fileUrl) {
    }
    return result;
 }
+
 /// Worker process that receives a list of URLs and reports the result
 /// Example:
 ///    ./worker localhost 4242
 /// The worker then contacts the leader process on "localhost" port "4242" for work
+
 int main(int argc, char* argv[]) {
    if (argc != 3) {
       std::cerr << "Usage: " << argv[0] << " <host> <port>" << std::endl;
@@ -89,7 +92,8 @@ int main(int argc, char* argv[]) {
 
    char buf[BUF_SIZE] = {0};
 
-   sleep(1);
+   std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
    int clientsd = ConnectToServer(argv[1], argv[2]);
    if (clientsd < 0) {
       exit(1); // unsuccessfull
