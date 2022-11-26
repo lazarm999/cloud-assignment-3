@@ -19,7 +19,7 @@
 using namespace std::literals;
 
 const int LISTENQ = 128;
-const int TIMEOUT = 2000; // in ms
+const int TIMEOUT = 20000; // in ms
 
 struct client_descriptor {
    std::string file;
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
    std::unordered_map<int, client_descriptor> clients;
 
    while (remainingFileNo > 0) {
-      int poll_count = poll(psds, psdlen, 500); 
+      int poll_count = poll(psds, psdlen, 1000); 
       if (poll_count == -1) {
          perror("poll");
          exit(1);
@@ -201,7 +201,7 @@ int main(int argc, char* argv[]) {
                //std::cout << "Here" << (psds[i].revents) << std::endl;
                auto fileUrl = clients[connsd].file;
                clients.erase(connsd);
-               if (fileUrl.empty()) unassignedFiles.push_back(fileUrl);
+               if (!fileUrl.empty()) unassignedFiles.push_back(fileUrl);
                DelFromPollsds(psds, i, psdlen);
                close(connsd);
                i--;

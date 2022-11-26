@@ -92,7 +92,8 @@ int main(int argc, char* argv[]) {
 
    char buf[BUF_SIZE] = {0};
 
-   std::this_thread::sleep_for(std::chrono::milliseconds(50));
+   sleep(1);
+   //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
    int clientsd = ConnectToServer(argv[1], argv[2]);
    if (clientsd < 0) {
@@ -107,10 +108,10 @@ int main(int argc, char* argv[]) {
    long msglen;
    while ((msglen = recv(clientsd, buf, sizeof(buf), 0)) > 0) { // while not EOF(0) or error(-1)
       auto fileUrl = std::string(buf);
-      //std::cout << fileUrl << std::endl;
       auto result = DoTask(curl, fileUrl);
       // Send result
       send(clientsd, &result, sizeof(result), 0);
+      //std::cout << fileUrl << std::endl;
       //std::cout << "Process " << pid << std::endl;
    }
 
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
       exit(1);
    }
    else if (msglen == 0) {
-      ;//std::cout << "EOF" << std::endl;
+      //std::cout << "EOF" << std::endl;
    }
 
    return 0;
