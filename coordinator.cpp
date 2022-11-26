@@ -19,7 +19,7 @@
 using namespace std::literals;
 
 const int LISTENQ = 128;
-const int TIMEOUT = 20000; // in ms
+const int TIMEOUT = 6000; // in ms
 
 struct client_descriptor {
    std::string file;
