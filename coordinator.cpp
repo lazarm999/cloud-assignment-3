@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
                   if (!remainingFileNo) break;
                }
             }
-            else if ((psds[i].revents & POLLHUP) || std::chrono::duration_cast<std::chrono::milliseconds>(now - clients[psds[i].fd].last_seen).count() > TIMEOUT) {
+            else if ((psds[i].revents & POLLHUP) || std::chrono::duration_cast<std::chrono::milliseconds>(now - clients[connsd].last_seen).count() > TIMEOUT) {
                //std::cout << "Here" << (psds[i].revents) << std::endl;
                auto fileUrl = clients[connsd].file;
                clients.erase(connsd);

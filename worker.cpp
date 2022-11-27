@@ -48,22 +48,29 @@ int DoTask(CurlEasyPtr& curl, std::string fileUrl) {
    auto csvData = curl.performToStringStream();
    auto result = 0;
    for (std::string row; std::getline(csvData, row, '\n');) {
-      auto rowStream = std::stringstream(std::move(row));
-      // Check the URL in the second column
-      unsigned columnIndex = 0;
-      for (std::string column; std::getline(rowStream, column, '\t'); ++columnIndex) {
-         // column 0 is id, 1 is URL
-         if (columnIndex == 1) {
-            // Check if URL is "google.ru"
-            auto pos = column.find("://");
-            if (pos != std::string::npos) {
-               auto afterProtocol = std::string_view(column).substr(pos + 3);
-               if (afterProtocol.starts_with("google.ru/"))
-                  ++result;
-            }
-            break;
-         }
-      }
+      auto rowdata = row.data();
+      auto limit = rowdata + row.size();
+      while ((*rowdata) != '\t' && rowdata < limit) rowdata++;
+      rowdata = std::strstr(rowdata, "://");
+      if (!rowdata) continue;
+      rowdata += 3;
+      if (std::strstr(rowdata, "google.ru/") == rowdata) result++;
+      // auto rowStream = std::stringstream(std::move(row));
+      // // Check the URL in the second column
+      // unsigned columnIndex = 0;
+      // for (std::string column; std::getline(rowStream, column, '\t'); ++columnIndex) {
+      //    // column 0 is id, 1 is URL
+      //    if (columnIndex == 1) {
+      //       // Check if URL is "google.ru"
+      //       auto pos = column.find("://");
+      //       if (pos != std::string::npos) {
+      //          auto afterProtocol = std::string_view(column).substr(pos + 3);
+      //          if (afterProtocol.starts_with("google.ru/"))
+      //             ++result;
+      //       }
+      //       break;
+      //    }
+      // }
    }
    return result;
 }
@@ -92,8 +99,8 @@ int main(int argc, char* argv[]) {
 
    char buf[BUF_SIZE] = {0};
 
-   sleep(1);
-   //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+   //sleep(1);
+   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
    int clientsd = ConnectToServer(argv[1], argv[2]);
    if (clientsd < 0) {
