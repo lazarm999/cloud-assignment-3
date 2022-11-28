@@ -99,8 +99,8 @@ int main(int argc, char* argv[]) {
 
    char buf[BUF_SIZE] = {0};
 
-   //sleep(1);
-   std::this_thread::sleep_for(std::chrono::milliseconds(500));
+   sleep(1);
+   //std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
    int clientsd = ConnectToServer(argv[1], argv[2]);
    if (clientsd < 0) {
